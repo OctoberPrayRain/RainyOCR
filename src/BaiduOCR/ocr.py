@@ -1,7 +1,21 @@
+"""
+测试请用命令
+```bash
+python3 -m "src.BaiduOCR.ocr"
+```
+或者
+```bash
+python -m "src.BaiduOCR.ocr"
+```
+这取决于你的python解释器名
+"""
+
+
 import requests
 import base64
 import os
 from dotenv import load_dotenv
+from src.utils.get_baidu_access_token import get
 
 load_dotenv()
 
@@ -39,10 +53,13 @@ def ocr(path: str) -> dict:
     request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic"
     access_token = os.getenv("ACCESS_TOKEN")
 
-    # TODO 将这里的逻辑修改为: 如何ACCESS_TOKEN不存在,则使用get_baidu_access_token.py来获取ACCESS_TOKEN
-    # 假如ACCESS_TOKEN不存在,则报错
+    # 假如ACCESS_TOKEN不存在,调用get函数,重新获取ACCESS_TOKEN,然后重新加载项目环境变量
     if not access_token:
-        raise BaiduOCRError("ACCESS_TOKEN not found in environment variables")
+        # raise BaiduOCRError("ACCESS_TOKEN not found in environment variables")
+        get()
+        load_dotenv()
+        access_token = os.getenv("ACCESS_TOKEN")
+        
 
     request_url = f"{request_url}?access_token={access_token}"
     headers = {"content-type": "application/x-www-form-urlencoded"}
