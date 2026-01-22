@@ -5,25 +5,6 @@ import random
 from dotenv import load_dotenv
 import requests
 load_dotenv()
-
-appid = os.getenv("APPID")
-appkey = os.getenv("APPKEY")
-if not appid:
-    raise Exception("APPID not exist!")
-if not appkey:
-    raise Exception("APPKEY not exist!")
-
-
-from_lang = "en"
-to_lang = "zh"
-
-endpoint = 'http://api.fanyi.baidu.com'
-path = '/api/trans/vip/translate'
-url = endpoint + path
-
-
-query = "what's your name?"
-
 def make_md5(s: str, encoding='utf-8'):
     """使用md5
 
