@@ -1,0 +1,52 @@
+# 全局排除：排除虚拟环境、编译产物和第三方库
+exclude: |
+  (?x)^(
+    \.venv/|
+    build/|
+    dist/|
+    third_party/|
+    node_modules/
+  )$
+
+repos:
+  # 1. 基础检查：处理文件末尾、大文件、冲突标记等
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files   # 防止误提交超大二进制文件
+      - id: check-merge-conflict      # 检查是否遗留了合并冲突的标记 (<<<<<<<)
+      - id: end-of-file-fixer         # 确保文件以换行符结尾
+      - id: trailing-whitespace       # 自动删除行尾空格
+      - id: check-yaml                # 检查 YAML 语法
+      - id: detect-private-key        # 扫描代码是否误带了私钥文件
+
+  # 2. Python 专项：使用 Ruff (目前最强、最快的工具)
+  # 它能同时完成代码格式化 (替代 Black) 和 静态检查 (替代 Flake8/isort)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.13
+    hooks:
+      - id: ruff-check                # 检查逻辑错误和未使用的导入
+        args: [--fix]                # 自动修复能自动处理的问题
+      - id: ruff-format               # 自动格式化代码风格
+
+  # 3. C / C++ 专项：Clang-Format
+  # 这里使用官方镜像，不需要你自己写 bash 脚本
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v21.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c, c++, cuda, header] # 涵盖 .c, .cpp, .h, .cu 等
+
+  # 4. 拼写检查：Typos
+  # 自动发现代码和 README 中的单词拼写错误，非常适合维护开源项目
+  - repo: https://github.com/crate-ci/typos
+    rev: v1
+    hooks:
+      - id: typos
+
+  # 5. C++ 代码规范检查 (可选)
+  - repo: https://github.com/cpplint/cpplint
+    rev: 2.0.2
+    hooks:
+      - id: cpplint
+        args: ["--filter=-readability/fn_size"] # 过滤掉一些过于严格的规则
