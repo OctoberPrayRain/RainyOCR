@@ -4,8 +4,11 @@ import os
 import random
 from dotenv import load_dotenv
 import requests
+
 load_dotenv()
-def make_md5(s: str, encoding='utf-8'):
+
+
+def make_md5(s: str, encoding="utf-8"):
     """使用md5函数计算字符串的MD5哈希值
 
     Args:
@@ -18,7 +21,7 @@ def make_md5(s: str, encoding='utf-8'):
     return md5(s.encode(encoding)).hexdigest()
 
 
-def translate(query: str, from_lang: str = "en", to_lang = "zh"):
+def translate(query: str, from_lang: str = "en", to_lang="zh"):
     """将输入字符串翻译成为目标语言
 
     Args:
@@ -42,28 +45,36 @@ def translate(query: str, from_lang: str = "en", to_lang = "zh"):
     if not appkey:
         raise Exception("APPKEY not exist!")
 
-    endpoint = 'http://api.fanyi.baidu.com'
-    path = '/api/trans/vip/translate'
+    endpoint = "http://api.fanyi.baidu.com"
+    path = "/api/trans/vip/translate"
     url = endpoint + path
     # 生成盐
     salt = random.randint(32768, 65536)
     sign = make_md5(appid + query + str(salt) + appkey)
 
     # 构造request
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    payload = {'appid': appid, 'q': query, 'from': from_lang, 'to': to_lang, 'salt': salt, 'sign': sign}
-
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    payload = {
+        "appid": appid,
+        "q": query,
+        "from": from_lang,
+        "to": to_lang,
+        "salt": salt,
+        "sign": sign,
+    }
 
     # 发送request请求并获取结果
     r = requests.post(url, params=payload, headers=headers)
-    
+
     if r.status_code != 200:
         raise Exception(f"Baidu Translate HTTP Error: {r.status_code}")
-    
+
     result = r.json()
-    
+
     if error_code := result.get("error_code"):
-        raise Exception(f"API Error: {error_code}. {result.get("error_msg", "Unkown error")}")
+        raise Exception(
+            f"API Error: {error_code}. {result.get('error_msg', 'Unknown error')}"
+        )
 
     return result
 
