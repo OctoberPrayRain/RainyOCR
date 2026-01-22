@@ -26,11 +26,10 @@ def get():
 
     # print(json.dumps(response_json, indent=4, ensure_ascii=False))
     
-    content = f'\nACCESS_TOKEN = {response_json["access_token"]}'
+    content = f'\nACCESS_TOKEN = "{response_json["access_token"]}"'
     
     with open(".env", "a", encoding="utf-8") as f:
         f.write(content)
-        f.close()
 
 if __name__ == "__main__":
     get()
