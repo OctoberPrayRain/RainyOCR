@@ -9,7 +9,7 @@ load_dotenv()
 def get():
     api_key = os.getenv("API_KEY")
     secret_key = os.getenv("SECRET_KEY")
-    
+
     if not api_key:
         raise Exception("API_KEY not exist!")
     if not secret_key:
@@ -25,11 +25,12 @@ def get():
     response_json = json.loads(response.text)
 
     # print(json.dumps(response_json, indent=4, ensure_ascii=False))
-    
+
     content = f'\nACCESS_TOKEN = "{response_json["access_token"]}"'
-    
+
     with open(".env", "a", encoding="utf-8") as f:
         f.write(content)
+
 
 if __name__ == "__main__":
     get()
