@@ -1,0 +1,14 @@
+[project]
+name = "rainyocr"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "pyside6>=6.10.1",
+    "pytest>=9.0.2",
+    "requests>=2.32.5",
+    "rich>=14.2.0",
+    "ruff>=0.14.13",
+]
