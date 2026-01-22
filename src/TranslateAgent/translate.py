@@ -6,28 +6,41 @@ from dotenv import load_dotenv
 import requests
 load_dotenv()
 def make_md5(s: str, encoding='utf-8'):
-    """使用md5
+    """使用md5函数计算字符串的MD5哈希值
 
     Args:
-        s (str): _description_
-        encoding (str, optional): _description_. Defaults to 'utf-8'.
+        s (str): 需要被计算的字符串
+        encoding (str, optional): 编码格式. Defaults to 'utf-8'.
 
     Returns:
-        _type_: _description_
+        _type_: 计算得到的哈希值,以16进至大小写字母的形式返回.
     """
     return md5(s.encode(encoding)).hexdigest()
 
 
-def translate(query: str):
+def translate(query: str, from_lang: str = "en", to_lang = "zh"):
+    """将输入字符串翻译成为目标语言
+
+    Args:
+        query (str): 需要翻译的字符串
+        from_lang (str, optional): 输入的字符串的语言, 默认是英语. Defaults to "en".
+        to_lang (str, optional): 目标语言, 默认是中文. Defaults to "zh".
+
+    Raises:
+        Exception: 没有获取到APPID, 请检查你的项目目录下的.env文件的内容
+        Exception: 没有获取到APPKEY, 请检查你的项目目录下的.env文件的内容
+        Exception: HTTP请求未能成功, 勤检查网络
+        Exception: 百度翻译API使用过程中的错误, 具体需要查询百度翻译相关文档: https://fanyi-api.baidu.com/doc/23
+
+    Returns:
+        result(json): 返回一个json格式的结果
+    """
     appid = os.getenv("APPID")
     appkey = os.getenv("APPKEY")
     if not appid:
         raise Exception("APPID not exist!")
     if not appkey:
         raise Exception("APPKEY not exist!")
-    
-    from_lang = "en"
-    to_lang = "zh"
 
     endpoint = 'http://api.fanyi.baidu.com'
     path = '/api/trans/vip/translate'
