@@ -4,6 +4,7 @@ import os
 import random
 from dotenv import load_dotenv
 import requests
+from src.utils.errors import missing_key_error, network_error, baidu_api_error, TaskType
 
 load_dotenv()
 
@@ -41,9 +42,9 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
     appid = os.getenv("APPID")
     appkey = os.getenv("APPKEY")
     if not appid:
-        raise Exception("APPID not exist!")
+        raise missing_key_error("APPID")
     if not appkey:
-        raise Exception("APPKEY not exist!")
+        raise missing_key_error("APPKEY")
 
     endpoint = "http://api.fanyi.baidu.com"
     path = "/api/trans/vip/translate"
@@ -64,16 +65,16 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
     }
 
     # 发送request请求并获取结果
-    r = requests.post(url, params=payload, headers=headers)
+    response = requests.post(url, params=payload, headers=headers)
 
-    if r.status_code != 200:
-        raise Exception(f"Baidu Translate HTTP Error: {r.status_code}")
+    if response.status_code != 200:
+        raise network_error(response.status_code)
 
-    result = r.json()
+    result = response.json()
 
     if error_code := result.get("error_code"):
-        raise Exception(
-            f"API Error: {error_code}. {result.get('error_msg', 'Unknown error')}"
+        raise baidu_api_error(
+            result.get("error_msg", "Unknown error"), error_code, TaskType.TRANSLATE
         )
 
     return result
