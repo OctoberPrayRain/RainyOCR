@@ -31,10 +31,10 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
         to_lang (str, optional): 目标语言, 默认是中文. Defaults to "zh".
 
     Raises:
-        Exception: 没有获取到APPID, 请检查你的项目目录下的.env文件的内容
-        Exception: 没有获取到APPKEY, 请检查你的项目目录下的.env文件的内容
-        Exception: HTTP请求未能成功, 勤检查网络
-        Exception: 百度翻译API使用过程中的错误, 具体需要查询百度翻译相关文档: https://fanyi-api.baidu.com/doc/23
+        TaggedError: 没有获取到APPID, 请检查你的项目目录下的.env文件的内容
+        TaggedError: 没有获取到APPKEY, 请检查你的项目目录下的.env文件的内容
+        TaggedError: HTTP请求未能成功, 勤检查网络
+        TaggedError: 百度翻译API使用过程中的错误, 具体需要查询百度翻译相关文档: https://fanyi-api.baidu.com/doc/23
 
     Returns:
         result(json): 返回一个json格式的结果
