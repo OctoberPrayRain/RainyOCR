@@ -75,7 +75,7 @@ def ocr(path: str) -> dict:
             raise baidu_api_error(
                 result.get("error_msg", "Unknown error"), error_code, TaskType.OCR
             )
-
+        # TODO 将json格式的识别结果解析成字符串形式, 方便交给翻译模块处理
         return result
 
 
