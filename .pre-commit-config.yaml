@@ -23,7 +23,7 @@ repos:
   # 2. Python 专项：使用 Ruff (目前最强、最快的工具)
   # 它能同时完成代码格式化 (替代 Black) 和 静态检查 (替代 Flake8/isort)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.13
+    rev: v0.14.14
     hooks:
       - id: ruff-check                # 检查逻辑错误和未使用的导入
         args: [--fix]                # 自动修复能自动处理的问题
