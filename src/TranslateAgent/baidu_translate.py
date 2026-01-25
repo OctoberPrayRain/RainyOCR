@@ -1,11 +1,11 @@
 from hashlib import md5
 import json
-import os
 import random
 from dotenv import load_dotenv
 import requests
-from src.BaiduOCR import ocr
-from src.utils.errors import missing_key_error, network_error, baidu_api_error, TaskType
+from src.OCRAgent import baidu_ocr
+from src.utils.get_env import get_env
+from src.utils.errors import network_error, baidu_api_error, TaskType
 from src.utils.baidu_ocr_result_processor import process
 
 load_dotenv()
@@ -19,7 +19,7 @@ def make_md5(s: str, encoding="utf-8"):
         encoding (str, optional): 编码格式. Defaults to 'utf-8'.
 
     Returns:
-        _type_: 计算得到的哈希值,以16进至大小写字母的形式返回.
+        str: 计算得到的哈希值,以16进至大小写字母的形式返回.
     """
     return md5(s.encode(encoding)).hexdigest()
 
@@ -33,20 +33,14 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
         to_lang (str, optional): 目标语言, 默认是中文. Defaults to "zh".
 
     Raises:
-        TaggedError: 没有获取到APPID, 请检查你的项目目录下的.env文件的内容
-        TaggedError: 没有获取到APPKEY, 请检查你的项目目录下的.env文件的内容
         TaggedError: HTTP请求未能成功, 勤检查网络
         TaggedError: 百度翻译API使用过程中的错误, 具体需要查询百度翻译相关文档: https://fanyi-api.baidu.com/doc/23
 
     Returns:
         result(json): 返回一个json格式的结果
     """
-    appid = os.getenv("APPID")
-    appkey = os.getenv("APPKEY")
-    if not appid:
-        raise missing_key_error("APPID")
-    if not appkey:
-        raise missing_key_error("APPKEY")
+    appid = get_env("APPID")
+    appkey = get_env("APPKEY")
 
     endpoint = "http://api.fanyi.baidu.com"
     path = "/api/trans/vip/translate"
@@ -83,5 +77,5 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
 
 
 if __name__ == "__main__":
-    result = translate(process(ocr.ocr("images/test.png")))
+    result = translate(process(baidu_ocr.ocr("images/test.png")))
     print(json.dumps(result, ensure_ascii=False))

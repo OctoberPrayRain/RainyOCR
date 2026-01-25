@@ -1,8 +1,5 @@
-import os
-from dotenv import load_dotenv
 import requests
-
-load_dotenv()
+from src.utils.get_env import get_env
 
 
 # 翻译文本为中文
@@ -16,9 +13,10 @@ def translate(query: str, to_lang="zh"):
     Returns:
         r.json: 返回Json文本格式的text_head.
     """
-    url = os.getenv("Google_Translate_Node")
-    api_key = os.getenv("Google_Translate_Secret_Key")
-    model = os.getenv("Google_Translate_Model_Name")
+
+    url = get_env("Google_Translate_Node")
+    api_key = get_env("Google_Translate_Secret_Key")
+    model = get_env("Google_Translate_Model_Name")
 
     headers = {
         "Authorization": f"Bearer {api_key}",

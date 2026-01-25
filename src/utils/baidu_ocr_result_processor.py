@@ -1,4 +1,4 @@
-from src.BaiduOCR.ocr import ocr
+from src.OCRAgent.baidu_ocr import ocr
 
 
 def process(ocr_result: dict[str, list[dict[str, str]] | int]):

@@ -1,6 +1,6 @@
-from src.TranslateAgent import translate
+from src.TranslateAgent import baidu_translate
 from src.utils import baidu_ocr_result_processor
-from src.BaiduOCR.ocr import ocr
+from src.OCRAgent.baidu_ocr import ocr
 
 
 def process(translate_result: dict[str, list[dict[str, str]] | int]):
@@ -19,6 +19,8 @@ def process(translate_result: dict[str, list[dict[str, str]] | int]):
 
 if __name__ == "__main__":
     result = process(
-        translate.translate(baidu_ocr_result_processor.process(ocr("images/test.png")))
+        baidu_translate.translate(
+            baidu_ocr_result_processor.process(ocr("images/test.png"))
+        )
     )
     print(result)

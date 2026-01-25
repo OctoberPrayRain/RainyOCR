@@ -14,9 +14,9 @@ import requests
 import base64
 import os
 from dotenv import load_dotenv
+from src.utils.get_env import get_env
 from src.utils.get_baidu_access_token import get
 from src.utils.errors import (
-    missing_key_error,
     file_not_exist_error,
     network_error,
     baidu_api_error,
@@ -52,9 +52,7 @@ def ocr(path: str) -> dict:
     if not access_token:
         get()
         load_dotenv()
-        access_token = os.getenv("ACCESS_TOKEN")
-        if not access_token:
-            raise missing_key_error("ACCESS_TOKEN")
+        access_token = get_env("ACCESS_TOKEN")
 
     request_url = f"{request_url}?access_token={access_token}"
     headers = {"content-type": "application/x-www-form-urlencoded"}

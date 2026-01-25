@@ -17,15 +17,6 @@ def config_error(message: str, **kwargs) -> TaggedError:
     return TaggedError(message, "config", **kwargs)
 
 
-def missing_key_error(key_name: str) -> TaggedError:
-    return TaggedError(
-        f"{key_name} not exist! Please check your configuration.",
-        "config",
-        "missing_key",
-        key=key_name,
-    )
-
-
 def file_not_exist_error(file_name: str) -> TaggedError:
     return TaggedError(
         f"{file_name} not exist! Please check this file.", "file", file_name=file_name
