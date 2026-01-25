@@ -4,7 +4,9 @@ import os
 import random
 from dotenv import load_dotenv
 import requests
+from src.BaiduOCR import ocr
 from src.utils.errors import missing_key_error, network_error, baidu_api_error, TaskType
+from src.utils.baidu_ocr_result_processor import process
 
 load_dotenv()
 
@@ -81,5 +83,5 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
 
 
 if __name__ == "__main__":
-    result = translate("How are you?")
+    result = translate(process(ocr.ocr("images/test.png")))
     print(json.dumps(result, ensure_ascii=False))
