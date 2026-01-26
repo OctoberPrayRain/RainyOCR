@@ -1,9 +1,12 @@
 from hashlib import md5
 import json
-import os
 import random
 from dotenv import load_dotenv
 import requests
+from src.OCRAgent import baidu_ocr
+from src.utils.get_env import get_env
+from src.utils.errors import network_error, baidu_api_error, TaskType
+from src.utils.baidu_ocr_result_processor import process
 
 load_dotenv()
 
@@ -16,7 +19,7 @@ def make_md5(s: str, encoding="utf-8"):
         encoding (str, optional): 编码格式. Defaults to 'utf-8'.
 
     Returns:
-        _type_: 计算得到的哈希值,以16进至大小写字母的形式返回.
+        str: 计算得到的哈希值,以16进至大小写字母的形式返回.
     """
     return md5(s.encode(encoding)).hexdigest()
 
@@ -30,20 +33,14 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
         to_lang (str, optional): 目标语言, 默认是中文. Defaults to "zh".
 
     Raises:
-        Exception: 没有获取到APPID, 请检查你的项目目录下的.env文件的内容
-        Exception: 没有获取到APPKEY, 请检查你的项目目录下的.env文件的内容
-        Exception: HTTP请求未能成功, 勤检查网络
-        Exception: 百度翻译API使用过程中的错误, 具体需要查询百度翻译相关文档: https://fanyi-api.baidu.com/doc/23
+        TaggedError: HTTP请求未能成功, 勤检查网络
+        TaggedError: 百度翻译API使用过程中的错误, 具体需要查询百度翻译相关文档: https://fanyi-api.baidu.com/doc/23
 
     Returns:
         result(json): 返回一个json格式的结果
     """
-    appid = os.getenv("APPID")
-    appkey = os.getenv("APPKEY")
-    if not appid:
-        raise Exception("APPID not exist!")
-    if not appkey:
-        raise Exception("APPKEY not exist!")
+    appid = get_env("APPID")
+    appkey = get_env("APPKEY")
 
     endpoint = "http://api.fanyi.baidu.com"
     path = "/api/trans/vip/translate"
@@ -64,21 +61,21 @@ def translate(query: str, from_lang: str = "en", to_lang="zh"):
     }
 
     # 发送request请求并获取结果
-    r = requests.post(url, params=payload, headers=headers)
+    response = requests.post(url, params=payload, headers=headers)
 
-    if r.status_code != 200:
-        raise Exception(f"Baidu Translate HTTP Error: {r.status_code}")
+    if response.status_code != 200:
+        raise network_error(response.status_code)
 
-    result = r.json()
+    result = response.json()
 
     if error_code := result.get("error_code"):
-        raise Exception(
-            f"API Error: {error_code}. {result.get('error_msg', 'Unknown error')}"
+        raise baidu_api_error(
+            result.get("error_msg", "Unknown error"), error_code, TaskType.TRANSLATE
         )
 
     return result
 
 
 if __name__ == "__main__":
-    result = translate("How are you?")
+    result = translate(process(baidu_ocr.ocr("images/test.png")))
     print(json.dumps(result, ensure_ascii=False))
