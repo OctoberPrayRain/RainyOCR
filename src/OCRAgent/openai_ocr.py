@@ -5,7 +5,7 @@ python3 -m "src.OCRAgent.openai_ocr"
 ```
 或者
 ```bash
-python -m "ssrc.OCRAgent.openai_ocr"
+python -m "src.OCRAgent.openai_ocr"
 ```
 这取决于你的python解释器名
 """
@@ -13,11 +13,8 @@ python -m "ssrc.OCRAgent.openai_ocr"
 import os
 import requests
 import base64
-from dotenv import load_dotenv
 from src.utils.errors import file_not_exist_error
 from src.utils.get_env import get_env
-
-load_dotenv()
 
 
 def ocr(path: str) -> str:
@@ -42,11 +39,6 @@ def ocr(path: str) -> str:
     url = get_env("Google_OCR_Node")  # API请求端点
     model = get_env("Google_OCR_Model_Name")  # 调用的API模型名称
     api_key = get_env("Google_OCR_Secret_Key")  # API的密钥
-    # 假如密钥不存在,调用get函数,重新获取密钥,然后重新加载项目环境变量
-    if not api_key:
-        get_env("Google_OCR_Secret_Key")
-        load_dotenv()
-        api_key = get_env("Google_OCR_Secret_Key")
 
     # Post {BaseURL}/chat/completions 或  /responses
 

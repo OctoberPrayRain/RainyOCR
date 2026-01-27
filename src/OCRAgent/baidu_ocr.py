@@ -13,17 +13,13 @@ python -m "src.BaiduOCR.ocr"
 import requests
 import base64
 import os
-from dotenv import load_dotenv
 from src.utils.get_env import get_env
-from src.utils.get_baidu_access_token import get
 from src.utils.errors import (
     file_not_exist_error,
     network_error,
     baidu_api_error,
     TaskType,
 )
-
-load_dotenv()
 
 """
 通用文字识别
@@ -46,13 +42,7 @@ def ocr(path: str) -> dict:
         raise file_not_exist_error(path)
 
     request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic"
-    access_token = os.getenv("ACCESS_TOKEN")
-
-    # 假如ACCESS_TOKEN不存在,调用get函数,重新获取ACCESS_TOKEN,然后重新加载项目环境变量
-    if not access_token:
-        get()
-        load_dotenv()
-        access_token = get_env("ACCESS_TOKEN")
+    access_token = get_env("ACCESS_TOKEN")
 
     request_url = f"{request_url}?access_token={access_token}"
     headers = {"content-type": "application/x-www-form-urlencoded"}
