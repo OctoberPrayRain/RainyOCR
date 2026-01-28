@@ -1,14 +1,11 @@
 from hashlib import md5
 import json
 import random
-from dotenv import load_dotenv
 import requests
 from src.OCRAgent import baidu_ocr
 from src.utils.get_env import get_env
 from src.utils.errors import network_error, baidu_api_error, TaskType
 from src.utils.baidu_ocr_result_processor import process
-
-load_dotenv()
 
 
 def make_md5(s: str, encoding="utf-8"):
