@@ -1,22 +1,29 @@
-from PIL import Image
 import mss
+import mss.tools
+
+"""
+当前是对整个屏幕进行截屏
+"""
 
 
-with mss.mss() as sct:
-    sct_img = sct.grab(sct.monitors[1])
-
-    img = Image.new("RGB", sct_img.size)
-
-    pixels = zip(sct_img.raw[2::4], sct_img.raw[1::4], sct_img.raw[::4])
-
-    img.putdata(list(pixels))
-
+# TODO: 还需要一个json文件解析，后续这个配置的json文件非常重要
+def screenshot(img_x: int, img_y: int, img_width: int, img_height: int):
     """
-    pixels = img.load()
-
-    for x in range(sct_img.width):
-        for y in range(sct_img.height):
-            pixels[x, y] = sct_img.pixel(x, y)
+    这是一个用于截图的函数
     """
+    with mss.mss() as sct:
+        monitor = {
+            "top": img_x,
+            "left": img_y,
+            "width": img_width,
+            "height": img_height,
+        }
+        output = "sct-{top}x{left}_{width}x{height}.png".format(**monitor)
 
-    img.show()
+        sct_img = sct.grab(monitor)
+        mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
+        print(output)
+
+
+if __name__ == "__main__":
+    screenshot(100, 100, 200, 130)
