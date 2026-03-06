@@ -1,7 +1,11 @@
 # RainyOCR
-A simple OCR tools to translate game texts/一个用于翻译游戏文本的简单OCR工具
-# How To Use
-- 1.Use ```https://github.com/OctoberPrayRain/RainyOCR.git``` to clone the repository to your local environment.  将本仓库克隆到本地 <br>
-- 2.Use ```uv sync``` to download the requirements of this app. 使用uv来安装项目依赖<br>
-- 3.Prepare the ```.env```, use ```cp .env.example .env``` to create a new .env file,then edit it. 将原本的.env.example文件复制一份，重命名为.env后并编辑该文件<br>
-- 4.Use ```uv run python main.py``` or ```python main.py``` to run RainyOCR. 执行main.py来运行程序
+A simple OCR tools to translate game texts
+# How to install
+- Execute ```git clone https://github.com/OctoberPrayRain/RainyOCR.git``` to clone the repository in local environment. <br>
+- Execute ```uv sync``` in project files to download the requirements.
+- Use ```cp .env.example .env``` to create a ```.env``` file,then edit ```.env``` to use your own LLM with API Keys.
+- Execute ```uv run python main.py``` or ```python main.py``` to open ```RainyOCR```
+# How to use
+- Click the ```Select Region``` button to select a window that you want to capture.
+- Then click the ```Capture + Translate``` button to upload the captured picture and translate.
+- Wait for the result of translated text.
