@@ -23,7 +23,7 @@ repos:
   # 2. Python 专项：使用 Ruff (目前最强、最快的工具)
   # 它能同时完成代码格式化 (替代 Black) 和 静态检查 (替代 Flake8/isort)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.5
     hooks:
       - id: ruff-check                # 检查逻辑错误和未使用的导入
         args: [--fix]                # 自动修复能自动处理的问题
@@ -32,7 +32,7 @@ repos:
   # 3. C / C++ 专项：Clang-Format
   # 这里使用官方镜像，不需要你自己写 bash 脚本
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v21.1.8
+    rev: v22.1.0
     hooks:
       - id: clang-format
         types_or: [c, c++, cuda, header] # 涵盖 .c, .cpp, .h, .cu 等
