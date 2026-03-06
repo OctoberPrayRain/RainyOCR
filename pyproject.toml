@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "dotenv>=0.9.9",
+    "pynput>=1.7.7",
     "mss>=10.1.0",
     "pillow>=12.1.0",
     "pre-commit>=4.5.1",
