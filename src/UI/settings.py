@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QKeySequence
+from PySide6.QtGui import QKeySequence, QMouseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -21,6 +21,11 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QVBoxLayout,
     QWidget,
+)
+
+from src.UI.window_chrome import (
+    WindowDragController,
+    enable_translucent_frameless_window,
 )
 
 DEFAULT_TRANSLATION_FONT_SIZE = 15
@@ -97,7 +102,9 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("RainyOCR Settings")
         self.setModal(True)
+        enable_translucent_frameless_window(self)
         self.resize(560, 600)
+        self._drag_controller = WindowDragController(self)
 
         self._ocr_model_input = QLineEdit()
         self._ocr_gateway_input = QLineEdit()
@@ -144,11 +151,21 @@ class SettingsDialog(QDialog):
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(16)
 
         title = QLabel("Model Settings")
         title.setObjectName("settingsTitle")
+        close_button = QPushButton("×")
+        close_button.setObjectName("windowCloseButton")
+        close_button.setToolTip("Close")
+        close_button.setFixedSize(42, 42)
+        close_button.clicked.connect(self.reject)
+        title_row = QHBoxLayout()
+        title_row.setSpacing(10)
+        title_row.addWidget(title)
+        title_row.addStretch()
+        title_row.addWidget(close_button)
         subtitle = QLabel(
             "Configure OpenAI-compatible endpoints for OCR and translation. "
             "Saved changes apply to the next capture."
@@ -156,7 +173,7 @@ class SettingsDialog(QDialog):
         subtitle.setObjectName("settingsSubtitle")
         subtitle.setWordWrap(True)
 
-        layout.addWidget(title)
+        layout.addLayout(title_row)
         layout.addWidget(subtitle)
         layout.addWidget(
             self._settings_group(
@@ -279,6 +296,24 @@ class SettingsDialog(QDialog):
 
         input_widget.setEchoMode(QLineEdit.EchoMode.Password)
         toggle.setText("Show")
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if self._drag_controller.handle_mouse_press(event):
+            return
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._drag_controller.handle_mouse_move(event):
+            return
+
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if self._drag_controller.handle_mouse_release(event):
+            return
+
+        super().mouseReleaseEvent(event)
 
 
 def _setting_value(values: dict[str, str], key: str) -> str:

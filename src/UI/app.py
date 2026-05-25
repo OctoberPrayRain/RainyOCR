@@ -7,7 +7,7 @@ from __future__ import annotations
 import sys
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
+from PySide6.QtGui import QCloseEvent, QKeySequence, QMouseEvent, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -29,6 +29,10 @@ from src.UI.settings import (
 )
 from src.UI.style import APP_STYLESHEET, add_soft_shadow, stylesheet_for_theme
 from src.UI.tray import RainyTray
+from src.UI.window_chrome import (
+    WindowDragController,
+    enable_translucent_frameless_window,
+)
 
 try:
     from pynput import keyboard
@@ -132,6 +136,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("RainyOCR")
+        enable_translucent_frameless_window(self)
         self.resize(520, 360)
 
         self._settings = load_settings()
@@ -140,11 +145,13 @@ class MainWindow(QMainWindow):
         self._global_hotkey = GlobalHotkeyListener()
         self._allow_close = False
         self._is_dark_theme = False
+        self._drag_controller = WindowDragController(self)
 
         central = QWidget(self)
         central.setObjectName("mainCentral")
+        central.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(0)
 
         card = QFrame(central)
@@ -165,6 +172,10 @@ class MainWindow(QMainWindow):
         self._theme_button.setObjectName("themeToggleButton")
         self._theme_button.setToolTip("Switch to dark mode")
         self._theme_button.setFixedSize(42, 42)
+        self._close_button = QPushButton("×")
+        self._close_button.setObjectName("windowCloseButton")
+        self._close_button.setToolTip("Close")
+        self._close_button.setFixedSize(42, 42)
 
         subtitle = QLabel(
             "Capture game text, OCR it, and translate without leaving your screen."
@@ -195,6 +206,7 @@ class MainWindow(QMainWindow):
         title_row.addStretch()
         title_row.addWidget(self._theme_button)
         title_row.addWidget(self._settings_button)
+        title_row.addWidget(self._close_button)
 
         card_layout.addLayout(title_row)
         card_layout.addWidget(subtitle)
@@ -212,6 +224,7 @@ class MainWindow(QMainWindow):
         )
         self._settings_button.clicked.connect(self._open_settings)
         self._theme_button.clicked.connect(self._toggle_theme)
+        self._close_button.clicked.connect(self.close)
         self._controller.status_changed.connect(self._set_status)
         self._controller.translation_displayed.connect(self._hide_to_tray)
 
@@ -313,6 +326,24 @@ class MainWindow(QMainWindow):
         self._controller.shutdown()
         super().closeEvent(event)
         QApplication.quit()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if self._drag_controller.handle_mouse_press(event):
+            return
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._drag_controller.handle_mouse_move(event):
+            return
+
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if self._drag_controller.handle_mouse_release(event):
+            return
+
+        super().mouseReleaseEvent(event)
 
 
 def run() -> int:

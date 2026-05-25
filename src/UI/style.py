@@ -38,14 +38,14 @@ def _build_stylesheet(
 QMainWindow,
 QWidget#translationPopup,
 QDialog {
-    background-color: $window_bg;
+    background-color: transparent;
     color: $text;
     font-family: "Noto Sans", "Segoe UI", sans-serif;
     font-size: 14px;
 }
 
 QWidget#mainCentral {
-    background-color: $window_bg;
+    background-color: transparent;
 }
 
 QFrame#heroCard,
@@ -121,7 +121,8 @@ QPushButton#secondaryButton:pressed {
 }
 
 QPushButton#settingsGearButton,
-QPushButton#themeToggleButton {
+QPushButton#themeToggleButton,
+QPushButton#windowCloseButton {
     background-color: $secondary_bg;
     border: 1px solid $secondary_border;
     border-radius: 21px;
@@ -134,15 +135,27 @@ QPushButton#themeToggleButton {
 }
 
 QPushButton#settingsGearButton:hover,
-QPushButton#themeToggleButton:hover {
+QPushButton#themeToggleButton:hover,
+QPushButton#windowCloseButton:hover {
     background-color: $secondary_hover;
     border-color: $accent;
     color: $title;
 }
 
 QPushButton#settingsGearButton:pressed,
-QPushButton#themeToggleButton:pressed {
+QPushButton#themeToggleButton:pressed,
+QPushButton#windowCloseButton:pressed {
     background-color: $secondary_pressed;
+}
+
+QPushButton#windowCloseButton:hover {
+    background-color: #ff5d6c;
+    border-color: #ff8792;
+    color: #ffffff;
+}
+
+QPushButton#windowCloseButton:pressed {
+    background-color: #d94150;
 }
 
 QDialog QLabel,
