@@ -20,6 +20,7 @@ from src.UI.style import add_soft_shadow
 from src.UI.window_chrome import (
     WindowDragController,
     enable_translucent_frameless_window,
+    is_macos,
 )
 
 
@@ -27,11 +28,11 @@ class TranslationPopup(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("RainyOCR Translation")
-        self.setWindowFlags(
-            Qt.WindowType.Tool
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-        )
+        window_flags = Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint
+        if not is_macos():
+            window_flags |= Qt.WindowType.FramelessWindowHint
+
+        self.setWindowFlags(window_flags)
         enable_translucent_frameless_window(self)
         self.setObjectName("translationPopup")
         self.resize(440, 260)

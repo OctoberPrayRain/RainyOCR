@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from string import Template
 
 from PySide6.QtGui import QColor
@@ -38,14 +39,13 @@ def _build_stylesheet(
 QMainWindow,
 QWidget#translationPopup,
 QDialog {
-    background-color: transparent;
+    background-color: $window_surface;
     color: $text;
-    font-family: "Noto Sans", "Segoe UI", sans-serif;
     font-size: 14px;
 }
 
 QWidget#mainCentral {
-    background-color: transparent;
+    background-color: $window_surface;
 }
 
 QFrame#heroCard,
@@ -246,6 +246,7 @@ QScrollBar::sub-page:vertical {
 }
 """).substitute(
         window_bg=window_bg,
+        window_surface=_window_surface(window_bg),
         card_bg=card_bg,
         card_border=card_border,
         text=text,
@@ -269,6 +270,13 @@ QScrollBar::sub-page:vertical {
         scrollbar=scrollbar,
         scrollbar_hover=scrollbar_hover,
     )
+
+
+def _window_surface(window_bg: str) -> str:
+    if sys.platform == "darwin":
+        return window_bg
+
+    return "transparent"
 
 
 DARK_STYLESHEET = _build_stylesheet(

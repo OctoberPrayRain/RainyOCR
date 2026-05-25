@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
@@ -28,8 +30,15 @@ INTERACTIVE_WIDGETS = (
 def enable_translucent_frameless_window(widget: QWidget) -> None:
     """Use custom chrome while keeping rounded card edges transparent."""
 
+    if is_macos():
+        return
+
     widget.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
     widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+
+def is_macos() -> bool:
+    return sys.platform == "darwin"
 
 
 class WindowDragController:

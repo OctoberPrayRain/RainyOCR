@@ -32,6 +32,7 @@ from src.UI.tray import RainyTray
 from src.UI.window_chrome import (
     WindowDragController,
     enable_translucent_frameless_window,
+    is_macos,
 )
 
 try:
@@ -149,7 +150,8 @@ class MainWindow(QMainWindow):
 
         central = QWidget(self)
         central.setObjectName("mainCentral")
-        central.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        if not is_macos():
+            central.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         layout = QVBoxLayout(central)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(0)
