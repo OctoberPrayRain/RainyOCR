@@ -36,9 +36,9 @@ def ocr(path: str) -> str:
         b64 = base64.b64encode(f.read()).decode("utf-8")
 
     image_data_url = f"data:image/png;base64,{b64}"
-    url = get_env("Google_OCR_Node")  # API请求端点
-    model = get_env("Google_OCR_Model_Name")  # 调用的API模型名称
-    api_key = get_env("Google_OCR_Secret_Key")  # API的密钥
+    url = get_env("OpenAI_OCR_Node")  # API请求端点
+    model = get_env("OpenAI_OCR_Model_Name")  # 调用的API模型名称
+    api_key = get_env("OpenAI_OCR_Secret_Key")  # API的密钥
 
     # Post {BaseURL}/chat/completions 或  /responses
 

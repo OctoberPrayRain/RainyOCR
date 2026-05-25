@@ -14,9 +14,9 @@ def translate(query: str, to_lang="zh"):
         r.json: 返回Json文本格式的text_head.
     """
 
-    url = get_env("Google_Translate_Node")
-    api_key = get_env("Google_Translate_Secret_Key")
-    model = get_env("Google_Translate_Model_Name")
+    url = get_env("OpenAI_Translate_Node")
+    api_key = get_env("OpenAI_Translate_Secret_Key")
+    model = get_env("OpenAI_Translate_Model_Name")
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -31,6 +31,7 @@ def translate(query: str, to_lang="zh"):
                 "content": (
                     "You are a translation engine. "
                     "Translate the user's text faithfully and return ONLY the translated text."
+                    "Filter the mistaken words and grammar errors in the original text and correct them in the translation. "
                 ),
             },
             {
