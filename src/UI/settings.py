@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -23,6 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.UI.style import add_soft_shadow
 from src.UI.window_chrome import (
     WindowDragController,
     enable_translucent_frameless_window,
@@ -151,8 +153,16 @@ class SettingsDialog(QDialog):
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(16)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(0)
+
+        card = QFrame(self)
+        card.setObjectName("settingsCard")
+        add_soft_shadow(card)
+
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(22, 20, 22, 22)
+        card_layout.setSpacing(14)
 
         title = QLabel("Model Settings")
         title.setObjectName("settingsTitle")
@@ -173,9 +183,9 @@ class SettingsDialog(QDialog):
         subtitle.setObjectName("settingsSubtitle")
         subtitle.setWordWrap(True)
 
-        layout.addLayout(title_row)
-        layout.addWidget(subtitle)
-        layout.addWidget(
+        card_layout.addLayout(title_row)
+        card_layout.addWidget(subtitle)
+        card_layout.addWidget(
             self._settings_group(
                 "OCR Model",
                 [
@@ -185,7 +195,7 @@ class SettingsDialog(QDialog):
                 ],
             ),
         )
-        layout.addWidget(
+        card_layout.addWidget(
             self._settings_group(
                 "Translate Model",
                 [
@@ -195,13 +205,13 @@ class SettingsDialog(QDialog):
                 ],
             ),
         )
-        layout.addWidget(
+        card_layout.addWidget(
             self._settings_group(
                 "Display",
                 [("Translation font size", self._font_size_row())],
             ),
         )
-        layout.addWidget(
+        card_layout.addWidget(
             self._settings_group(
                 "Shortcut",
                 [("Capture shortcut", self._shortcut_row())],
@@ -214,7 +224,8 @@ class SettingsDialog(QDialog):
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        card_layout.addWidget(buttons)
+        layout.addWidget(card)
 
     def _settings_group(
         self,

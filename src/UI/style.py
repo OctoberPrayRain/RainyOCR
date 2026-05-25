@@ -49,7 +49,8 @@ QWidget#mainCentral {
 }
 
 QFrame#heroCard,
-QFrame#translationCard {
+QFrame#translationCard,
+QFrame#settingsCard {
     background-color: $card_bg;
     border: 1px solid $card_border;
     border-radius: 22px;
