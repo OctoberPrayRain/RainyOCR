@@ -19,9 +19,13 @@ class RegionOverlay(QWidget):
         self._drag_end = QPoint()
         self._is_dragging = False
 
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setCursor(Qt.CrossCursor)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setCursor(Qt.CursorShape.CrossCursor)
 
     def start(self, geometry: QRect) -> None:
         self.setGeometry(geometry)
@@ -33,12 +37,12 @@ class RegionOverlay(QWidget):
         return QRect(self._drag_start, self._drag_end).normalized()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self._drag_start = event.globalPosition().toPoint()
             self._drag_end = self._drag_start
             self.update()
-        elif event.button() == Qt.RightButton:
+        elif event.button() == Qt.MouseButton.RightButton:
             self.selection_cancelled.emit()
             self.close()
 
@@ -48,7 +52,7 @@ class RegionOverlay(QWidget):
             self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() != Qt.LeftButton:
+        if event.button() != Qt.MouseButton.LeftButton:
             return
 
         self._is_dragging = False
@@ -64,9 +68,9 @@ class RegionOverlay(QWidget):
 
     def paintEvent(self, _) -> None:
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 90))
+        painter.fillRect(self.rect(), QColor(5, 12, 20, 132))
 
         if self._is_dragging or not self.current_global_rect().isNull():
             selection = self.current_global_rect()
@@ -74,6 +78,7 @@ class RegionOverlay(QWidget):
                 self.mapFromGlobal(selection.topLeft()),
                 self.mapFromGlobal(selection.bottomRight()),
             ).normalized()
-            pen = QPen(QColor(90, 170, 255), 2)
+            painter.fillRect(local_selection, QColor(53, 210, 255, 34))
+            pen = QPen(QColor(53, 210, 255), 3)
             painter.setPen(pen)
             painter.drawRect(local_selection)
