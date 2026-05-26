@@ -4,9 +4,14 @@
 
 from __future__ import annotations
 
+import logging
+
 from PySide6.QtCore import QPoint, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen
 from PySide6.QtWidgets import QWidget
+
+
+logger = logging.getLogger("rainyocr.ui.overlay")
 
 
 class RegionOverlay(QWidget):
@@ -15,15 +20,27 @@ class RegionOverlay(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        logger.info("Initializing region overlay")
         self._drag_start = QPoint()
         self._drag_end = QPoint()
         self._is_dragging = False
 
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setCursor(Qt.CrossCursor)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setCursor(Qt.CursorShape.CrossCursor)
 
     def start(self, geometry: QRect) -> None:
+        logger.info(
+            "Starting region overlay: x=%s y=%s w=%s h=%s",
+            geometry.x(),
+            geometry.y(),
+            geometry.width(),
+            geometry.height(),
+        )
         self.setGeometry(geometry)
         self.show()
         self.raise_()
@@ -33,12 +50,14 @@ class RegionOverlay(QWidget):
         return QRect(self._drag_start, self._drag_end).normalized()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self._drag_start = event.globalPosition().toPoint()
             self._drag_end = self._drag_start
+            logger.info("Region drag started at global=%s", self._drag_start)
             self.update()
-        elif event.button() == Qt.RightButton:
+        elif event.button() == Qt.MouseButton.RightButton:
+            logger.info("Region selection cancelled by right click")
             self.selection_cancelled.emit()
             self.close()
 
@@ -48,7 +67,7 @@ class RegionOverlay(QWidget):
             self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() != Qt.LeftButton:
+        if event.button() != Qt.MouseButton.LeftButton:
             return
 
         self._is_dragging = False
@@ -56,17 +75,31 @@ class RegionOverlay(QWidget):
         rect = self.current_global_rect()
 
         if rect.width() >= 10 and rect.height() >= 10:
+            logger.info(
+                "Region drag finished: x=%s y=%s w=%s h=%s",
+                rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+            )
             self.region_selected.emit(rect)
         else:
+            logger.info(
+                "Region drag too small; cancelled: x=%s y=%s w=%s h=%s",
+                rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+            )
             self.selection_cancelled.emit()
 
         self.close()
 
     def paintEvent(self, _) -> None:
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 90))
+        painter.fillRect(self.rect(), QColor(5, 12, 20, 132))
 
         if self._is_dragging or not self.current_global_rect().isNull():
             selection = self.current_global_rect()
@@ -74,6 +107,7 @@ class RegionOverlay(QWidget):
                 self.mapFromGlobal(selection.topLeft()),
                 self.mapFromGlobal(selection.bottomRight()),
             ).normalized()
-            pen = QPen(QColor(90, 170, 255), 2)
+            painter.fillRect(local_selection, QColor(53, 210, 255, 34))
+            pen = QPen(QColor(53, 210, 255), 3)
             painter.setPen(pen)
             painter.drawRect(local_selection)
