@@ -17,6 +17,9 @@ from src.utils.errors import file_not_exist_error
 from src.utils.get_env import get_env
 
 
+_SESSION = requests.Session()
+
+
 def ocr(path: str) -> str:
     """遵循OpenAI调用方式的OCR模型调用
 
@@ -72,7 +75,7 @@ def ocr(path: str) -> str:
     }
 
     # 发送request请求并且获得结果
-    r = requests.post(url, json=body, headers=headers)
+    r = _SESSION.post(url, json=body, headers=headers)
 
     print("status:", r.status_code)  # 响应请求结果
     print("content-type:", r.headers.get("Content-Type"))  # 返回文本的数据类型(json)

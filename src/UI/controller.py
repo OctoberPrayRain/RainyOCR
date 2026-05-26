@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -55,6 +56,9 @@ class UIController(QObject):
         self._worker_thread: QThread | None = None
         self._worker: OCRTranslateWorker | None = None
         self._is_busy = False
+        self._active_capture_hash: str | None = None
+        self._last_capture_hash: str | None = None
+        self._last_translation: str | None = None
 
     @property
     def selected_region(self) -> QRect | None:
@@ -85,9 +89,21 @@ class UIController(QObject):
 
         try:
             image_path = self._capture_selected_region(self._selected_region)
+            capture_hash = self._file_sha256(image_path)
         except Exception as error:
             self.status_changed.emit(f"Capture failed: {error}")
             return
+
+        if (
+            capture_hash == self._last_capture_hash
+            and self._last_translation is not None
+        ):
+            os.remove(image_path)
+            self._show_translation(self._last_translation)
+            self.status_changed.emit("Translation reused from identical capture")
+            return
+
+        self._active_capture_hash = capture_hash
 
         self._worker_thread = QThread(self)
         self._worker = OCRTranslateWorker(image_path)
@@ -123,17 +139,24 @@ class UIController(QObject):
 
     @Slot(str)
     def _on_translation_finished(self, translated_text: str) -> None:
+        self._last_capture_hash = self._active_capture_hash
+        self._last_translation = translated_text
+        self._active_capture_hash = None
+        self._show_translation(translated_text)
+        self._is_busy = False
+        self.status_changed.emit("Translation complete")
+
+    def _show_translation(self, translated_text: str) -> None:
         self._popup.set_title("Translation")
         self._popup.set_text(translated_text)
         self._popup.show()
         self._popup.raise_()
         self._popup.activateWindow()
         self.translation_displayed.emit()
-        self._is_busy = False
-        self.status_changed.emit("Translation complete")
 
     @Slot(str)
     def _on_translation_failed(self, message: str) -> None:
+        self._active_capture_hash = None
         self._popup.set_title("Translation Failed")
         self._popup.set_text(f"Error: {message}")
         self._popup.show()
@@ -182,6 +205,14 @@ class UIController(QObject):
             raise RuntimeError("Failed to save captured image")
 
         return image_path
+
+    def _file_sha256(self, path: str) -> str:
+        digest = hashlib.sha256()
+        with open(path, "rb") as file:
+            for chunk in iter(lambda: file.read(1024 * 1024), b""):
+                digest.update(chunk)
+
+        return digest.hexdigest()
 
     def _capture_target(self, rect: QRect) -> tuple[QScreen, QRect]:
         normalized_rect = rect.normalized()

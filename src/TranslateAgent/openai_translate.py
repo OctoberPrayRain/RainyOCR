@@ -2,6 +2,9 @@ import requests
 from src.utils.get_env import get_env
 
 
+_SESSION = requests.Session()
+
+
 # 翻译文本为中文
 def translate(query: str, to_lang="zh"):
     """将目标语言全部翻译为中文
@@ -43,7 +46,7 @@ def translate(query: str, to_lang="zh"):
     }
 
     # 发送request请求并获取结果
-    r = requests.post(url, json=body, headers=headers)
+    r = _SESSION.post(url, json=body, headers=headers)
 
     print("status:", r.status_code)  # 响应请求结果
     print("content-type:", r.headers.get("Content-Type"))  # 返回文本的数据类型(json)
