@@ -66,6 +66,7 @@ cp .env.example .env
 ## 配置说明
 
 RainyOCR 使用 OpenAI-compatible 接口，因此你可以接入 OpenAI、反代网关或其他兼容 Chat Completions 格式的模型服务。
+网关地址既可以填写 Base URL，也可以填写完整的 `/chat/completions` 地址。比如百炼北京地域可以填写 `https://dashscope.aliyuncs.com/compatible-mode/v1`，RainyOCR 会自动请求 `/chat/completions`。
 
 `.env.example` 中的主要配置项如下：
 
@@ -73,10 +74,10 @@ RainyOCR 使用 OpenAI-compatible 接口，因此你可以接入 OpenAI、反代
 | ---------------------------------- | ------------------------------------------------------ |
 | `OpenAI_OCR_Model_Name`          | OCR / 多模态识别使用的模型名称                         |
 | `OpenAI_OCR_Secret_Key`          | OCR 模型 API Key                                       |
-| `OpenAI_OCR_Node`                | OCR 模型网关地址 / Base URL                            |
+| `OpenAI_OCR_Node`                | OCR 模型网关地址 / Base URL，或完整 `/chat/completions` 地址 |
 | `OpenAI_Translate_Model_Name`    | 翻译模型名称                                           |
 | `OpenAI_Translate_Secret_Key`    | 翻译模型 API Key                                       |
-| `OpenAI_Translate_Node`          | 翻译模型网关地址 / Base URL                            |
+| `OpenAI_Translate_Node`          | 翻译模型网关地址 / Base URL，或完整 `/chat/completions` 地址 |
 | `RainyOCR_Translation_Font_Size` | Translation 窗口结果字体大小，默认 `15`，最大 `32` |
 | `RainyOCR_Capture_Shortcut`      | 截图翻译快捷键，默认 `Ctrl+Shift+T`                  |
 

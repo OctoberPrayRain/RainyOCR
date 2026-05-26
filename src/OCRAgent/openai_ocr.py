@@ -15,6 +15,7 @@ import requests
 import base64
 from src.utils.errors import file_not_exist_error
 from src.utils.get_env import get_env
+from src.utils.openai_compatible import chat_message_content, post_chat_completion
 
 
 _SESSION = requests.Session()
@@ -39,17 +40,9 @@ def ocr(path: str) -> str:
         b64 = base64.b64encode(f.read()).decode("utf-8")
 
     image_data_url = f"data:image/png;base64,{b64}"
-    url = get_env("OpenAI_OCR_Node")  # API请求端点
+    url = get_env("OpenAI_OCR_Node")  # API请求端点或base_url
     model = get_env("OpenAI_OCR_Model_Name")  # 调用的API模型名称
     api_key = get_env("OpenAI_OCR_Secret_Key")  # API的密钥
-
-    # Post {BaseURL}/chat/completions 或  /responses
-
-    # 请求体的头:
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
 
     body = {
         "model": model,
@@ -74,15 +67,8 @@ def ocr(path: str) -> str:
         "max_tokens": 2000,
     }
 
-    # 发送request请求并且获得结果
-    r = _SESSION.post(url, json=body, headers=headers)
-
-    print("status:", r.status_code)  # 响应请求结果
-    print("content-type:", r.headers.get("Content-Type"))  # 返回文本的数据类型(json)
-    print("text_head:", r.text)  # 返回的具体数据内容
-
-    data = r.json()
-    return data["choices"][0]["message"]["content"].strip()
+    data = post_chat_completion(_SESSION, url, api_key, body)
+    return chat_message_content(data)
 
 
 if __name__ == "__main__":

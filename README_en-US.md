@@ -69,14 +69,16 @@ RainyOCR uses OpenAI-compatible APIs, so you can connect it to OpenAI, proxy gat
 
 Main keys in `.env.example`:
 
+For OpenAI-compatible gateways, both a base URL and a full `/chat/completions` URL are accepted. For example, Alibaba Cloud Model Studio / Bailian Beijing can use `https://dashscope.aliyuncs.com/compatible-mode/v1`; RainyOCR will call `/chat/completions` automatically.
+
 | Key | Description |
 | --- | --- |
 | `OpenAI_OCR_Model_Name` | OCR / multimodal model name |
 | `OpenAI_OCR_Secret_Key` | OCR model API key |
-| `OpenAI_OCR_Node` | OCR model gateway / base URL |
+| `OpenAI_OCR_Node` | OCR model gateway / base URL, or full `/chat/completions` URL |
 | `OpenAI_Translate_Model_Name` | Translation model name |
 | `OpenAI_Translate_Secret_Key` | Translation model API key |
-| `OpenAI_Translate_Node` | Translation model gateway / base URL |
+| `OpenAI_Translate_Node` | Translation model gateway / base URL, or full `/chat/completions` URL |
 | `RainyOCR_Translation_Font_Size` | Translation popup font size, default `15`, max `32` |
 | `RainyOCR_Capture_Shortcut` | Capture shortcut, default `Ctrl+Shift+T` |
 
