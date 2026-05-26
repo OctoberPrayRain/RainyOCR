@@ -10,6 +10,11 @@
 
 RainyOCR is a low-interruption OCR translation tool. Select a game text region once, then capture, recognize, and translate it into a small independent popup with a button or shortcut. It works well for games with fixed text windows, such as Galgame and RPGMaker titles, and can also help with manga or doujinshi translation.
 
+<p align="center">
+  <img src="images/preview.png" alt="All RainyOCR Windows" width="540" height="360">
+</p>
+
+
 ## Features
 
 - **Region selection**: select the screen area that should be recognized.

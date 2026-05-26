@@ -10,6 +10,10 @@
 
 RainyOCR 是一个低打扰的 OCR 翻译工具：框选游戏文本区域后，即可通过按钮或快捷键截图、识别并翻译到独立小窗口中。适用于 Galgame、RPGMaker 等固定文本窗口的游戏，也适用于漫画与同人本等翻译。
 
+<p align="center">
+  <img src="images/preview.png" alt="All RainyOCR Windows" width="540" height="360">
+</p>
+
 ## 功能特性
 
 - **区域框选**：通过遮罩层选择需要识别的屏幕区域。
@@ -70,16 +74,16 @@ RainyOCR 使用 OpenAI-compatible 接口，因此你可以接入 OpenAI、反代
 
 `.env.example` 中的主要配置项如下：
 
-| 配置项                             | 说明                                                   |
-| ---------------------------------- | ------------------------------------------------------ |
-| `OpenAI_OCR_Model_Name`          | OCR / 多模态识别使用的模型名称                         |
-| `OpenAI_OCR_Secret_Key`          | OCR 模型 API Key                                       |
+| 配置项                             | 说明                                                           |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `OpenAI_OCR_Model_Name`          | OCR / 多模态识别使用的模型名称                                 |
+| `OpenAI_OCR_Secret_Key`          | OCR 模型 API Key                                               |
 | `OpenAI_OCR_Node`                | OCR 模型网关地址 / Base URL，或完整 `/chat/completions` 地址 |
-| `OpenAI_Translate_Model_Name`    | 翻译模型名称                                           |
-| `OpenAI_Translate_Secret_Key`    | 翻译模型 API Key                                       |
+| `OpenAI_Translate_Model_Name`    | 翻译模型名称                                                   |
+| `OpenAI_Translate_Secret_Key`    | 翻译模型 API Key                                               |
 | `OpenAI_Translate_Node`          | 翻译模型网关地址 / Base URL，或完整 `/chat/completions` 地址 |
-| `RainyOCR_Translation_Font_Size` | Translation 窗口结果字体大小，默认 `15`，最大 `32` |
-| `RainyOCR_Capture_Shortcut`      | 截图翻译快捷键，默认 `Ctrl+Shift+T`                  |
+| `RainyOCR_Translation_Font_Size` | Translation 窗口结果字体大小，默认 `15`，最大 `32`         |
+| `RainyOCR_Capture_Shortcut`      | 截图翻译快捷键，默认 `Ctrl+Shift+T`                          |
 
 你也可以不手动编辑 `.env`，直接在主界面右上角点击齿轮按钮打开 **Settings**，在那里填写模型、网关、API Key、快捷键和字体大小。
 
