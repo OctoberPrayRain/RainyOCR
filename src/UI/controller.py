@@ -9,12 +9,13 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 
 from PIL import Image
 from PySide6.QtCore import QObject, QRect, Signal, Slot, QThread
-from PySide6.QtGui import QGuiApplication, QScreen
+from PySide6.QtGui import QGuiApplication, QImage, QPixmap, QScreen
 
 from src.OCRAgent.openai_ocr import ocr as openai_ocr
 from src.TranslateAgent.openai_translate import translate as openai_translate
@@ -257,12 +258,46 @@ class UIController(QObject):
         if pixmap.isNull():
             raise RuntimeError("Captured image is empty")
 
+        self._save_captured_pixmap(pixmap, image_path)
+
+        logger.info("Capture saved: %s size=%s", image_path, os.path.getsize(image_path))
+        return image_path
+
+    def _save_captured_pixmap(self, pixmap: QPixmap, image_path: str) -> None:
+        if sys.platform == "darwin":
+            self._save_captured_pixmap_with_pillow(pixmap, image_path)
+            return
+
         saved = pixmap.save(image_path, "PNG")
         if not saved:
             raise RuntimeError("Failed to save captured image")
 
-        logger.info("Capture saved: %s size=%s", image_path, os.path.getsize(image_path))
-        return image_path
+    def _save_captured_pixmap_with_pillow(
+        self,
+        pixmap: QPixmap,
+        image_path: str,
+    ) -> None:
+        logger.info("Saving macOS capture through QImage/Pillow path")
+        image = pixmap.toImage().convertToFormat(QImage.Format.Format_RGBA8888)
+        width = image.width()
+        height = image.height()
+        byte_count = image.sizeInBytes()
+        bytes_per_line = image.bytesPerLine()
+        if width <= 0 or height <= 0 or byte_count <= 0:
+            raise RuntimeError("Captured image has invalid dimensions")
+
+        buffer = image.constBits()
+        image_bytes = bytes(buffer[:byte_count])
+        pil_image = Image.frombytes(
+            "RGBA",
+            (width, height),
+            image_bytes,
+            "raw",
+            "RGBA",
+            bytes_per_line,
+            1,
+        )
+        pil_image.save(image_path, "PNG")
 
     def _file_sha256(self, path: str) -> str:
         digest = hashlib.sha256()
