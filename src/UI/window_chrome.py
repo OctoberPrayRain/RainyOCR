@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import logging
 
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QMouseEvent
@@ -15,6 +16,9 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QWidget,
 )
+
+
+logger = logging.getLogger("rainyocr.ui.window_chrome")
 
 
 INTERACTIVE_WIDGETS = (
@@ -31,8 +35,16 @@ def enable_translucent_frameless_window(widget: QWidget) -> None:
     """Use custom chrome while keeping rounded card edges transparent."""
 
     if is_macos():
+        logger.info(
+            "Skipping translucent frameless window on macOS for %s",
+            widget.__class__.__name__,
+        )
         return
 
+    logger.info(
+        "Enabling translucent frameless window for %s",
+        widget.__class__.__name__,
+    )
     widget.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
     widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 

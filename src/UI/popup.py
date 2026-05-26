@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QMouseEvent
 from PySide6.QtWidgets import (
@@ -24,15 +26,20 @@ from src.UI.window_chrome import (
 )
 
 
+logger = logging.getLogger("rainyocr.ui.popup")
+
+
 class TranslationPopup(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        logger.info("Initializing translation popup; macOS=%s", is_macos())
         self.setWindowTitle("RainyOCR Translation")
         window_flags = Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint
         if not is_macos():
             window_flags |= Qt.WindowType.FramelessWindowHint
 
         self.setWindowFlags(window_flags)
+        logger.info("Translation popup window flags set: %s", int(window_flags))
         enable_translucent_frameless_window(self)
         self.setObjectName("translationPopup")
         self.resize(440, 260)
@@ -73,13 +80,16 @@ class TranslationPopup(QWidget):
         layout.addWidget(card)
 
     def set_text(self, text: str) -> None:
+        logger.info("Translation popup text updated; length=%s", len(text))
         self._content.setPlainText(text)
 
     def set_title(self, title: str) -> None:
+        logger.info("Translation popup title updated: %s", title)
         self._title.setText(title)
         self.setWindowTitle(f"RainyOCR {title}")
 
     def set_translation_font_size(self, font_size: int) -> None:
+        logger.info("Translation popup font size updated: %s", font_size)
         font = QFont(self._content.font())
         font.setPointSize(font_size)
         self._content.setFont(font)

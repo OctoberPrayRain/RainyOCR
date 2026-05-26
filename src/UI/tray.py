@@ -4,12 +4,16 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon, QWidget
+
+
+logger = logging.getLogger("rainyocr.ui.tray")
 
 
 class RainyTray(QObject):
@@ -23,6 +27,7 @@ class RainyTray(QObject):
         quit_app: Callable[[], None],
     ) -> None:
         super().__init__(parent)
+        logger.info("Initializing system tray")
         self._show_main = show_main
         self._show_translation = show_translation
         self._show_settings = show_settings
@@ -58,8 +63,13 @@ class RainyTray(QObject):
     def show(self) -> None:
         if self.is_available():
             self._tray.show()
+            logger.info("System tray shown")
+            return
+
+        logger.warning("System tray is unavailable")
 
     def hide(self) -> None:
+        logger.info("System tray hidden")
         self._tray.hide()
 
     def is_available(self) -> bool:
@@ -67,8 +77,10 @@ class RainyTray(QObject):
 
     def show_hidden_message(self) -> None:
         if not self.is_available():
+            logger.info("Skip hidden message because tray is unavailable")
             return
 
+        logger.info("Showing tray hidden message")
         self._tray.showMessage(
             "RainyOCR is still running",
             "Main window was hidden to tray. Use the tray icon to restore it.",
@@ -78,6 +90,7 @@ class RainyTray(QObject):
 
     @Slot(QSystemTrayIcon.ActivationReason)
     def _on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        logger.info("Tray activated: %s", reason.name)
         if reason in {
             QSystemTrayIcon.ActivationReason.Trigger,
             QSystemTrayIcon.ActivationReason.DoubleClick,
@@ -90,6 +103,8 @@ class RainyTray(QObject):
         )
         icon = QIcon(str(icon_path))
         if not icon.isNull():
+            logger.info("Loaded tray icon: %s", icon_path)
             return icon
 
+        logger.warning("Tray icon failed to load, using system fallback: %s", icon_path)
         return QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)

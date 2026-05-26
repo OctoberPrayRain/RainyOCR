@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import shutil
 import subprocess
@@ -21,6 +22,9 @@ from src.UI.overlay import RegionOverlay
 from src.UI.popup import TranslationPopup
 
 
+logger = logging.getLogger("rainyocr.ui.controller")
+
+
 class OCRTranslateWorker(QObject):
     finished = Signal(str)
     failed = Signal(str)
@@ -32,16 +36,21 @@ class OCRTranslateWorker(QObject):
     @Slot()
     def run(self) -> None:
         try:
+            logger.info("OCR worker started; image_path=%s", self._image_path)
             source_text = openai_ocr(self._image_path)
+            logger.info("OCR completed; text_length=%s", len(source_text))
             if not source_text.strip():
                 raise ValueError("OCR returned empty text")
             translated = openai_translate(source_text)
+            logger.info("Translation completed; text_length=%s", len(translated))
             self.finished.emit(translated)
         except Exception as error:
+            logger.exception("OCR/translation worker failed")
             self.failed.emit(str(error))
         finally:
             if os.path.exists(self._image_path):
                 os.remove(self._image_path)
+                logger.info("Temporary capture removed: %s", self._image_path)
 
 
 class UIController(QObject):
@@ -65,25 +74,37 @@ class UIController(QObject):
         return self._selected_region
 
     def start_region_selection(self) -> None:
+        logger.info("Starting region selection")
         self._overlay = RegionOverlay()
         self._overlay.region_selected.connect(self._on_region_selected)
         self._overlay.selection_cancelled.connect(self._on_selection_cancelled)
 
         selection_geometry = self._virtual_screen_geometry()
         if selection_geometry.isEmpty():
+            logger.warning("No available screen geometry for region selection")
             self.status_changed.emit("No available screen for selection")
             return
 
+        logger.info(
+            "Region selection geometry: x=%s y=%s w=%s h=%s",
+            selection_geometry.x(),
+            selection_geometry.y(),
+            selection_geometry.width(),
+            selection_geometry.height(),
+        )
         self.status_changed.emit("Select translation area by dragging mouse")
         self._overlay.start(selection_geometry)
 
     @Slot()
     def trigger_capture_and_translate(self) -> None:
+        logger.info("Capture/translate requested")
         if self._is_busy:
+            logger.info("Capture ignored because worker is already busy")
             self.status_changed.emit("Translation is already running")
             return
 
         if self._selected_region is None:
+            logger.info("Capture ignored because no region is selected")
             self.status_changed.emit("Please select region first")
             return
 
@@ -91,6 +112,7 @@ class UIController(QObject):
             image_path = self._capture_selected_region(self._selected_region)
             capture_hash = self._file_sha256(image_path)
         except Exception as error:
+            logger.exception("Capture failed")
             self.status_changed.emit(f"Capture failed: {error}")
             return
 
@@ -99,6 +121,7 @@ class UIController(QObject):
             and self._last_translation is not None
         ):
             os.remove(image_path)
+            logger.info("Reusing cached translation for identical capture")
             self._show_translation(self._last_translation)
             self.status_changed.emit("Translation reused from identical capture")
             return
@@ -123,22 +146,32 @@ class UIController(QObject):
         self._popup.activateWindow()
         self.translation_displayed.emit()
         self._worker_thread.start()
+        logger.info("OCR worker thread started")
 
         self.status_changed.emit("Captured image, OCR + translation running")
 
     @Slot(QRect)
     def _on_region_selected(self, rect: QRect) -> None:
         self._selected_region = rect
+        logger.info(
+            "Region selected: x=%s y=%s w=%s h=%s",
+            rect.x(),
+            rect.y(),
+            rect.width(),
+            rect.height(),
+        )
         self.status_changed.emit(
             f"Region selected: {rect.width()}x{rect.height()} at ({rect.x()}, {rect.y()})"
         )
 
     @Slot()
     def _on_selection_cancelled(self) -> None:
+        logger.info("Region selection cancelled")
         self.status_changed.emit("Region selection cancelled")
 
     @Slot(str)
     def _on_translation_finished(self, translated_text: str) -> None:
+        logger.info("Translation finished; translated_text_length=%s", len(translated_text))
         self._last_capture_hash = self._active_capture_hash
         self._last_translation = translated_text
         self._active_capture_hash = None
@@ -147,6 +180,7 @@ class UIController(QObject):
         self.status_changed.emit("Translation complete")
 
     def _show_translation(self, translated_text: str) -> None:
+        logger.info("Showing translation popup; text_length=%s", len(translated_text))
         self._popup.set_title("Translation")
         self._popup.set_text(translated_text)
         self._popup.show()
@@ -156,6 +190,7 @@ class UIController(QObject):
 
     @Slot(str)
     def _on_translation_failed(self, message: str) -> None:
+        logger.error("Translation failed: %s", message)
         self._active_capture_hash = None
         self._popup.set_title("Translation Failed")
         self._popup.set_text(f"Error: {message}")
@@ -167,6 +202,14 @@ class UIController(QObject):
         self.status_changed.emit("Translation failed")
 
     def _capture_selected_region(self, rect: QRect) -> str:
+        logger.info(
+            "Capturing selected region: x=%s y=%s w=%s h=%s wayland=%s",
+            rect.x(),
+            rect.y(),
+            rect.width(),
+            rect.height(),
+            self._is_wayland_session(),
+        )
         image_path = os.path.join(
             tempfile.gettempdir(),
             f"rainyocr_capture_{uuid.uuid4().hex}.png",
@@ -181,6 +224,19 @@ class UIController(QObject):
             )
 
         screen, capture_rect = self._capture_target(rect)
+        logger.info(
+            "Capture target: screen=%s dpr=%s screen_geometry=(%s,%s %sx%s) rect=(%s,%s %sx%s)",
+            screen.name(),
+            screen.devicePixelRatio(),
+            screen.geometry().x(),
+            screen.geometry().y(),
+            screen.geometry().width(),
+            screen.geometry().height(),
+            capture_rect.x(),
+            capture_rect.y(),
+            capture_rect.width(),
+            capture_rect.height(),
+        )
 
         dpr = screen.devicePixelRatio()
         geometry = screen.geometry()
@@ -196,6 +252,7 @@ class UIController(QObject):
             width,
             height,
         )
+        logger.info("Screen grab completed; pixmap_is_null=%s", pixmap.isNull())
 
         if pixmap.isNull():
             raise RuntimeError("Captured image is empty")
@@ -204,6 +261,7 @@ class UIController(QObject):
         if not saved:
             raise RuntimeError("Failed to save captured image")
 
+        logger.info("Capture saved: %s size=%s", image_path, os.path.getsize(image_path))
         return image_path
 
     def _file_sha256(self, path: str) -> str:
@@ -239,6 +297,7 @@ class UIController(QObject):
     def _virtual_screen_geometry(self) -> QRect:
         screens = QGuiApplication.screens()
         if not screens:
+            logger.warning("QGuiApplication.screens() returned no screens")
             return QRect()
 
         geometry = QRect(screens[0].geometry())
@@ -293,6 +352,7 @@ class UIController(QObject):
     def _capture_with_grim(self, rect: QRect, image_path: str) -> bool:
         grim_path = shutil.which("grim")
         if grim_path is None:
+            logger.info("grim not found for Wayland capture")
             if os.getenv("HYPRLAND_INSTANCE_SIGNATURE"):
                 raise RuntimeError(
                     "Hyprland detected but 'grim' is not installed. "
@@ -315,6 +375,11 @@ class UIController(QObject):
             result = self._run_grim_capture(grim_path, image_path, capture_rect)
 
         if result.returncode != 0:
+            logger.warning(
+                "grim capture failed; returncode=%s stderr=%s",
+                result.returncode,
+                result.stderr.strip(),
+            )
             screen, fallback_rect = self._capture_target(capture_rect)
             result = self._run_grim_screen_capture(
                 grim_path,
@@ -352,6 +417,7 @@ class UIController(QObject):
         rect: QRect,
     ) -> subprocess.CompletedProcess[str]:
         geometry = f"{rect.x()},{rect.y()} {rect.width()}x{rect.height()}"
+        logger.info("Running grim capture: geometry=%s", geometry)
         return subprocess.run(
             [grim_path, "-g", geometry, image_path],
             check=False,
@@ -371,6 +437,7 @@ class UIController(QObject):
             original_result = subprocess.CompletedProcess([grim_path], 1, "", "")
 
         if not screen.name():
+            logger.warning("Cannot run grim output capture because screen has no name")
             return original_result
 
         full_output_path = os.path.join(
@@ -384,6 +451,11 @@ class UIController(QObject):
             text=True,
         )
         if output_result.returncode != 0:
+            logger.warning(
+                "grim output capture failed; returncode=%s stderr=%s",
+                output_result.returncode,
+                output_result.stderr.strip(),
+            )
             return original_result
 
         try:
@@ -439,6 +511,7 @@ class UIController(QObject):
 
     @Slot()
     def _cleanup_worker(self) -> None:
+        logger.info("Cleaning up OCR worker")
         if self._worker is not None:
             self._worker.deleteLater()
 
@@ -449,6 +522,11 @@ class UIController(QObject):
         self._worker = None
 
     def shutdown(self) -> None:
+        logger.info("Controller shutdown requested")
         if self._worker_thread is not None and self._worker_thread.isRunning():
             self._worker_thread.quit()
-            self._worker_thread.wait(1500)
+            stopped = self._worker_thread.wait(1500)
+            if stopped:
+                logger.info("Worker thread stopped during shutdown")
+            else:
+                logger.warning("Worker thread did not stop within shutdown timeout")

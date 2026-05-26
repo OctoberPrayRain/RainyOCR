@@ -155,6 +155,15 @@ Qt can be sensitive to transparent frameless windows on macOS, so RainyOCR avoid
 
 If global shortcuts do not work, check Accessibility / Input Monitoring permissions.
 
+If the app exits immediately and the shell shows exit code `139`, that usually means a native crash. RainyOCR now writes diagnostics here:
+
+```text
+~/Library/Logs/RainyOCR/rainyocr.log
+~/Library/Logs/RainyOCR/rainyocr-crash.log
+```
+
+`rainyocr.log` records startup, Qt warnings, screenshot, tray, hotkey, OCR, and translation lifecycle events. `rainyocr-crash.log` is written by Python `faulthandler` and can show all Python thread stacks before a native crash. For more detail, start with `RAINYOCR_DEBUG_LOG=1 uv run python main.py`.
+
 ### Linux / Wayland
 
 Install `grim` on Wayland. RainyOCR uses it for screenshots and includes coordinate conversion and edge clipping for Hyprland / high-DPI setups.

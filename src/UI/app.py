@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import sys
+import logging
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QKeySequence, QMouseEvent, QShortcut
@@ -34,11 +35,15 @@ from src.UI.window_chrome import (
     enable_translucent_frameless_window,
     is_macos,
 )
+from src.utils.logging_config import install_qt_message_handler, setup_logging
 
 try:
     from pynput import keyboard
 except ImportError:
     keyboard = None
+
+
+logger = logging.getLogger("rainyocr.ui.app")
 
 
 class GlobalHotkeyListener(QObject):
@@ -51,7 +56,9 @@ class GlobalHotkeyListener(QObject):
 
     def start(self, shortcut: str) -> None:
         self.stop()
+        logger.info("Starting global hotkey listener for shortcut=%s", shortcut)
         if keyboard is None:
+            logger.warning("pynput keyboard module is unavailable")
             self.status_changed.emit(
                 "Global hotkey unavailable, using app shortcut only"
             )
@@ -59,6 +66,7 @@ class GlobalHotkeyListener(QObject):
 
         hotkey = self._pynput_hotkey(shortcut)
         if not hotkey:
+            logger.warning("Could not convert shortcut for global hotkey: %s", shortcut)
             self.status_changed.emit(
                 f"Global hotkey unavailable for shortcut: {shortcut}"
             )
@@ -73,6 +81,7 @@ class GlobalHotkeyListener(QObject):
             self._listener.start()
         except Exception as error:
             self._listener = None
+            logger.exception("Failed to start global hotkey listener")
             self.status_changed.emit(
                 f"Global hotkey unavailable for {shortcut}: {error}"
             )
@@ -82,6 +91,7 @@ class GlobalHotkeyListener(QObject):
 
     def stop(self) -> None:
         if self._listener is not None:
+            logger.info("Stopping global hotkey listener")
             self._listener.stop()
             self._listener = None
 
@@ -136,12 +146,16 @@ class GlobalHotkeyListener(QObject):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+        logger.info("MainWindow initialization started")
         self.setWindowTitle("RainyOCR")
         enable_translucent_frameless_window(self)
+        logger.info("Window chrome configured; macOS=%s", is_macos())
         self.resize(520, 360)
 
         self._settings = load_settings()
+        logger.info("Settings loaded")
         self._popup = TranslationPopup()
+        logger.info("Translation popup created")
         self._controller = UIController(self._popup)
         self._global_hotkey = GlobalHotkeyListener()
         self._allow_close = False
@@ -239,6 +253,7 @@ class MainWindow(QMainWindow):
             self._quit_application,
         )
         self._tray.show()
+        logger.info("System tray initialized; available=%s", self._tray.is_available())
 
         self._shortcut = QShortcut(QKeySequence(), self)
         self._shortcut.activated.connect(self._controller.trigger_capture_and_translate)
@@ -248,13 +263,16 @@ class MainWindow(QMainWindow):
         )
         self._global_hotkey.status_changed.connect(self._set_status)
         self._apply_settings(self._settings)
+        logger.info("MainWindow initialization finished")
 
     def _set_status(self, message: str) -> None:
+        logger.info("Status changed: %s", message)
         self._status_label.setText(message)
 
     @Slot()
     def _toggle_theme(self) -> None:
         self._is_dark_theme = not self._is_dark_theme
+        logger.info("Theme toggled; dark=%s", self._is_dark_theme)
         application = QApplication.instance()
         if isinstance(application, QApplication):
             application.setStyleSheet(stylesheet_for_theme(self._is_dark_theme))
@@ -272,17 +290,24 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _open_settings(self) -> None:
+        logger.info("Opening settings dialog")
         dialog = SettingsDialog(self)
         dialog.settings_saved.connect(self._on_settings_saved)
         dialog.exec()
 
     @Slot(AppSettings)
     def _on_settings_saved(self, settings: AppSettings) -> None:
+        logger.info("Settings saved from dialog")
         self._apply_settings(settings)
         self._set_status("Settings saved. Shortcut and model config are active.")
 
     def _apply_settings(self, settings: AppSettings) -> None:
         self._settings = settings
+        logger.info(
+            "Applying settings: shortcut=%s translation_font_size=%s",
+            settings.capture_shortcut,
+            settings.translation_font_size,
+        )
         self._popup.set_translation_font_size(settings.translation_font_size)
         self._apply_shortcut(settings.capture_shortcut)
 
@@ -295,30 +320,40 @@ class MainWindow(QMainWindow):
     @Slot()
     def _hide_to_tray(self) -> None:
         if not self._tray.is_available():
+            logger.info("Tray unavailable; main window remains visible")
             return
 
+        logger.info("Hiding main window to tray")
         self.hide()
         self._tray.show_hidden_message()
 
     @Slot()
     def _restore_from_tray(self) -> None:
+        logger.info("Restoring main window from tray")
         self.showNormal()
         self.raise_()
         self.activateWindow()
 
     @Slot()
     def _show_translation_popup(self) -> None:
+        logger.info("Showing translation popup from tray/menu")
         self._popup.show()
         self._popup.raise_()
         self._popup.activateWindow()
 
     @Slot()
     def _quit_application(self) -> None:
+        logger.info("Quit requested")
         self._allow_close = True
         self._tray.hide()
         self.close()
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        logger.info(
+            "Close event received; allow_close=%s tray_available=%s",
+            self._allow_close,
+            self._tray.is_available(),
+        )
         if not self._allow_close and self._tray.is_available():
             event.ignore()
             self._hide_to_tray()
@@ -327,6 +362,7 @@ class MainWindow(QMainWindow):
         self._global_hotkey.stop()
         self._controller.shutdown()
         super().closeEvent(event)
+        logger.info("QApplication quit requested from closeEvent")
         QApplication.quit()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -349,13 +385,21 @@ class MainWindow(QMainWindow):
 
 
 def run() -> int:
+    log_dir = setup_logging()
+    install_qt_message_handler()
+    logger.info("Starting RainyOCR; log_dir=%s", log_dir)
     application = QApplication(sys.argv)
+    logger.info("QApplication created")
     application.setQuitOnLastWindowClosed(False)
     application.setStyle("Fusion")
     application.setStyleSheet(APP_STYLESHEET)
+    logger.info("QApplication style configured")
     window = MainWindow()
     window.show()
-    return application.exec()
+    logger.info("Main window shown; entering Qt event loop")
+    exit_code = application.exec()
+    logger.info("Qt event loop exited; code=%s", exit_code)
+    return exit_code
 
 
 if __name__ == "__main__":

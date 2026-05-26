@@ -153,6 +153,15 @@ macOS 上 Qt 对透明无边框窗口较敏感，因此 RainyOCR 会自动避开
 
 如果遇到全局快捷键不可用，请检查系统的辅助功能 / 输入监控权限。
 
+如果程序直接退出且终端显示退出码 `139`，通常表示底层原生崩溃。RainyOCR 会自动写入诊断日志：
+
+```text
+~/Library/Logs/RainyOCR/rainyocr.log
+~/Library/Logs/RainyOCR/rainyocr-crash.log
+```
+
+其中 `rainyocr.log` 记录启动、Qt 警告、截图、托盘、快捷键、OCR / 翻译流程；`rainyocr-crash.log` 由 Python `faulthandler` 写入，用于查看崩溃前所有 Python 线程的栈。需要更详细日志时，可用 `RAINYOCR_DEBUG_LOG=1 uv run python main.py` 启动。
+
 ### Linux / Wayland
 
 Wayland 环境下建议安装 `grim`，RainyOCR 会优先使用它完成屏幕截图。Hyprland / 高 DPI 场景下已经加入坐标换算和边缘裁剪兼容。
