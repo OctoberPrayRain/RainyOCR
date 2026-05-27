@@ -388,6 +388,10 @@ def run() -> int:
     log_dir = setup_logging()
     install_qt_message_handler()
     logger.info("Starting RainyOCR; log_dir=%s", log_dir)
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough,
+    )
+    logger.info("High DPI scale factor rounding policy set to PassThrough")
     application = QApplication(sys.argv)
     logger.info("QApplication created")
     application.setQuitOnLastWindowClosed(False)

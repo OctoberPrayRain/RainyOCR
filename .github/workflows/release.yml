@@ -21,14 +21,17 @@ jobs:
             os: windows-latest
             data_separator: ";"
             archive: RainyOCR-windows-x64.zip
+            pyinstaller_args: --manifest build/windows/RainyOCR.exe.manifest
           - name: macos-arm64
             os: macos-latest
             data_separator: ":"
             archive: RainyOCR-macos-arm64.zip
+            pyinstaller_args: ""
           - name: linux-x64
             os: ubuntu-latest
             data_separator: ":"
             archive: RainyOCR-linux-x64.tar.gz
+            pyinstaller_args: ""
 
     steps:
       - name: Checkout repository
@@ -70,6 +73,7 @@ jobs:
           --noconfirm
           --clean
           --add-data "images${{ matrix.data_separator }}images"
+          ${{ matrix.pyinstaller_args }}
           main.py
 
       - name: Package Windows build
