@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from src.utils.get_baidu_access_token import get
+from src.utils.paths import candidate_env_paths, env_path
 
 
 def get_env(name: str, can_retry: bool = True) -> str:
@@ -16,7 +17,9 @@ def get_env(name: str, can_retry: bool = True) -> str:
     Returns:
         str: 变量的内容
     """
-    load_dotenv()
+    load_dotenv(dotenv_path=env_path())
+    for path in candidate_env_paths()[1:]:
+        load_dotenv(dotenv_path=path, override=False)
     val = os.getenv(name)
 
     if not val:

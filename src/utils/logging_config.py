@@ -14,6 +14,8 @@ from pathlib import Path
 from types import TracebackType
 from typing import TextIO
 
+from src.utils.paths import env_path, is_frozen_app, user_config_dir
+
 LOGGER_NAME = "rainyocr"
 _LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
 _CRASH_FILE: TextIO | None = None
@@ -167,6 +169,9 @@ def _log_runtime_summary(logger: logging.Logger) -> None:
     logger.info("Executable: %s", sys.executable)
     logger.info("Working directory: %s", Path.cwd())
     logger.info("Arguments: %s", sys.argv)
+    logger.info("Frozen app: %s", is_frozen_app())
+    logger.info("User config directory: %s", user_config_dir())
+    logger.info("Environment file path: %s", env_path())
     for variable in (
         "QT_QPA_PLATFORM",
         "QT_PLUGIN_PATH",

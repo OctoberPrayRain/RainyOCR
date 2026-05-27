@@ -1,0 +1,125 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            data_separator: ";"
+            archive: RainyOCR-windows-x64.zip
+            pyinstaller_args: --manifest packaging/windows/RainyOCR.exe.manifest
+          - name: macos-arm64
+            os: macos-latest
+            data_separator: ":"
+            archive: RainyOCR-macos-arm64.zip
+            pyinstaller_args: ""
+          - name: linux-x64
+            os: ubuntu-latest
+            data_separator: ":"
+            archive: RainyOCR-linux-x64.tar.gz
+            pyinstaller_args: ""
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux Qt runtime dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libegl1 \
+            libgl1 \
+            libxkbcommon-x11-0 \
+            libxcb-cursor0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-render-util0 \
+            libxcb-xinerama0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Build with PyInstaller
+        run: >-
+          uv run --with "pyinstaller>=6.13" pyinstaller
+          --name RainyOCR
+          --windowed
+          --noconfirm
+          --clean
+          --add-data "images${{ matrix.data_separator }}images"
+          ${{ matrix.pyinstaller_args }}
+          main.py
+
+      - name: Package Windows build
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "${{ matrix.archive }}"
+          Compress-Archive -Path dist/RainyOCR -DestinationPath $archive -Force
+          New-Item -ItemType Directory -Force release-artifacts
+          Copy-Item $archive release-artifacts/${{ matrix.archive }}
+
+      - name: Package macOS build
+        if: runner.os == 'macOS'
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent dist/RainyOCR.app "${{ runner.temp }}/${{ matrix.archive }}"
+          mkdir -p release-artifacts
+          cp "${{ runner.temp }}/${{ matrix.archive }}" "release-artifacts/${{ matrix.archive }}"
+
+      - name: Package Linux build
+        if: runner.os == 'Linux'
+        run: |
+          tar -czf "${{ runner.temp }}/${{ matrix.archive }}" -C dist RainyOCR
+          mkdir -p release-artifacts
+          cp "${{ runner.temp }}/${{ matrix.archive }}" "release-artifacts/${{ matrix.archive }}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RainyOCR-${{ matrix.name }}
+          path: release-artifacts/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Create release and upload packages
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: release-artifacts/*

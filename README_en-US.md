@@ -178,6 +178,31 @@ uv run pyright src/UI src/OCRAgent src/TranslateAgent
 uv run python -m compileall src/UI src/OCRAgent src/TranslateAgent
 ```
 
+## GitHub Release Packaging
+
+This repository includes a GitHub Actions workflow:
+
+```text
+.github/workflows/release.yml
+```
+
+It builds on each target OS because PyInstaller cannot reliably cross-compile desktop apps:
+
+| Platform | Release file | Contents |
+| -------- | ------------ | -------- |
+| Windows | `RainyOCR-windows-x64.zip` | Unzip and run `RainyOCR/RainyOCR.exe` |
+| macOS | `RainyOCR-macos-arm64.zip` | Unzip and run `RainyOCR.app` |
+| Linux | `RainyOCR-linux-x64.tar.gz` | Extract and run `RainyOCR/RainyOCR` |
+
+To publish a new version, push a tag that starts with `v`:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+GitHub will build the three packages and create a versioned entry on the **Releases** page. You can also run **Actions → Build Release → Run workflow** manually; manual runs produce downloadable build artifacts but do not create a GitHub Release.
+
 ## Project Structure
 
 ```text

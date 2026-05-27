@@ -239,12 +239,15 @@ class UIController(QObject):
             capture_rect.height(),
         )
 
-        dpr = screen.devicePixelRatio()
-        geometry = screen.geometry()
-        x = round((capture_rect.x() - geometry.x()) * dpr)
-        y = round((capture_rect.y() - geometry.y()) * dpr)
-        width = round(capture_rect.width() * dpr)
-        height = round(capture_rect.height() * dpr)
+        x, y, width, height = self._grab_window_coordinates(screen, capture_rect)
+        logger.info(
+            "grabWindow coordinates: strategy=%s x=%s y=%s w=%s h=%s",
+            self._grab_window_coordinate_strategy(),
+            x,
+            y,
+            width,
+            height,
+        )
 
         pixmap = screen.grabWindow(
             0,
@@ -253,7 +256,13 @@ class UIController(QObject):
             width,
             height,
         )
-        logger.info("Screen grab completed; pixmap_is_null=%s", pixmap.isNull())
+        logger.info(
+            "Screen grab completed; pixmap_is_null=%s pixmap_size=%sx%s pixmap_dpr=%s",
+            pixmap.isNull(),
+            pixmap.width(),
+            pixmap.height(),
+            pixmap.devicePixelRatio(),
+        )
 
         if pixmap.isNull():
             raise RuntimeError("Captured image is empty")
@@ -262,6 +271,36 @@ class UIController(QObject):
 
         logger.info("Capture saved: %s size=%s", image_path, os.path.getsize(image_path))
         return image_path
+
+    def _grab_window_coordinates(
+        self,
+        screen: QScreen,
+        capture_rect: QRect,
+    ) -> tuple[int, int, int, int]:
+        x = capture_rect.x()
+        y = capture_rect.y()
+        width = capture_rect.width()
+        height = capture_rect.height()
+
+        if self._grab_window_coordinate_strategy() == "device-pixel":
+            geometry = screen.geometry()
+            x -= geometry.x()
+            y -= geometry.y()
+            dpr = screen.devicePixelRatio()
+            return (
+                round(x * dpr),
+                round(y * dpr),
+                round(width * dpr),
+                round(height * dpr),
+            )
+
+        return x, y, width, height
+
+    def _grab_window_coordinate_strategy(self) -> str:
+        if sys.platform in {"win32", "darwin"}:
+            return "logical"
+
+        return "device-pixel"
 
     def _save_captured_pixmap(self, pixmap: QPixmap, image_path: str) -> None:
         if sys.platform == "darwin":

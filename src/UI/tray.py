@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon, QWidget
+
+from src.utils.paths import resource_path
 
 
 logger = logging.getLogger("rainyocr.ui.tray")
@@ -98,9 +99,7 @@ class RainyTray(QObject):
             self._show_main()
 
     def _tray_icon(self) -> QIcon:
-        icon_path = (
-            Path(__file__).resolve().parents[2] / "images" / "rainyocr_tray_icon.svg"
-        )
+        icon_path = resource_path("images", "rainyocr_tray_icon.svg")
         icon = QIcon(str(icon_path))
         if not icon.isNull():
             logger.info("Loaded tray icon: %s", icon_path)
