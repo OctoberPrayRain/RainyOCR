@@ -3,7 +3,9 @@ import json
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+from src.utils.paths import env_path
+
+load_dotenv(dotenv_path=env_path())
 
 
 def get():
@@ -28,8 +30,10 @@ def get():
 
     content = f'\nACCESS_TOKEN = "{response_json["access_token"]}"'
 
-    with open(".env", "a", encoding="utf-8") as f:
-        f.write(content)
+    target = env_path()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding="utf-8") as file:
+        file.write(content)
 
 
 if __name__ == "__main__":

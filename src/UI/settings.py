@@ -29,6 +29,7 @@ from src.UI.window_chrome import (
     WindowDragController,
     enable_translucent_frameless_window,
 )
+from src.utils.paths import env_path
 
 DEFAULT_TRANSLATION_FONT_SIZE = 15
 DEFAULT_CAPTURE_SHORTCUT = "Ctrl+Shift+T"
@@ -53,14 +54,6 @@ class AppSettings:
     translate_gateway: str = ""
     translation_font_size: int = DEFAULT_TRANSLATION_FONT_SIZE
     capture_shortcut: str = DEFAULT_CAPTURE_SHORTCUT
-
-
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def env_path() -> Path:
-    return project_root() / ".env"
 
 
 def load_settings(path: Path | None = None) -> AppSettings:
