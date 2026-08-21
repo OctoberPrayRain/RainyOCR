@@ -17,7 +17,7 @@ from PIL import Image
 from PySide6.QtCore import QObject, QRect, Signal, Slot, QThread
 from PySide6.QtGui import QGuiApplication, QImage, QPixmap, QScreen
 
-from src.OCRAgent.openai_ocr import ocr as openai_ocr
+from src.OCRAgent.provider import ocr as run_ocr
 from src.TranslateAgent.openai_translate import translate as openai_translate
 from src.UI.overlay import RegionOverlay
 from src.UI.popup import TranslationPopup
@@ -38,7 +38,7 @@ class OCRTranslateWorker(QObject):
     def run(self) -> None:
         try:
             logger.info("OCR worker started; image_path=%s", self._image_path)
-            source_text = openai_ocr(self._image_path)
+            source_text = run_ocr(self._image_path)
             logger.info("OCR completed; text_length=%s", len(source_text))
             if not source_text.strip():
                 raise ValueError("OCR returned empty text")
