@@ -9,6 +9,7 @@ from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QKeySequence, QMouseEvent
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -37,6 +38,7 @@ DEFAULT_CAPTURE_SHORTCUT = "Ctrl+Shift+T"
 OCR_MODEL_NAME_KEY = "OpenAI_OCR_Model_Name"
 OCR_API_KEY_KEY = "OpenAI_OCR_Secret_Key"
 OCR_GATEWAY_KEY = "OpenAI_OCR_Node"
+USE_LOCAL_OCR_KEY = "RainyOCR_Use_Local_OCR"
 TRANSLATE_MODEL_NAME_KEY = "OpenAI_Translate_Model_Name"
 TRANSLATE_API_KEY_KEY = "OpenAI_Translate_Secret_Key"
 TRANSLATE_GATEWAY_KEY = "OpenAI_Translate_Node"
@@ -49,6 +51,7 @@ class AppSettings:
     ocr_model_name: str = ""
     ocr_api_key: str = ""
     ocr_gateway: str = ""
+    use_local_ocr: bool = False
     translate_model_name: str = ""
     translate_api_key: str = ""
     translate_gateway: str = ""
@@ -63,6 +66,7 @@ def load_settings(path: Path | None = None) -> AppSettings:
         ocr_model_name=_setting_value(values, OCR_MODEL_NAME_KEY),
         ocr_api_key=_setting_value(values, OCR_API_KEY_KEY),
         ocr_gateway=_setting_value(values, OCR_GATEWAY_KEY),
+        use_local_ocr=_bool_value(_setting_value(values, USE_LOCAL_OCR_KEY)),
         translate_model_name=_setting_value(values, TRANSLATE_MODEL_NAME_KEY),
         translate_api_key=_setting_value(values, TRANSLATE_API_KEY_KEY),
         translate_gateway=_setting_value(values, TRANSLATE_GATEWAY_KEY),
@@ -82,6 +86,7 @@ def save_settings(settings: AppSettings, path: Path | None = None) -> None:
         OCR_MODEL_NAME_KEY: settings.ocr_model_name,
         OCR_API_KEY_KEY: settings.ocr_api_key,
         OCR_GATEWAY_KEY: settings.ocr_gateway,
+        USE_LOCAL_OCR_KEY: _bool_env_value(settings.use_local_ocr),
         TRANSLATION_FONT_SIZE_KEY: str(settings.translation_font_size),
         CAPTURE_SHORTCUT_KEY: settings.capture_shortcut,
     }
@@ -104,6 +109,10 @@ class SettingsDialog(QDialog):
         self._ocr_model_input = QLineEdit()
         self._ocr_gateway_input = QLineEdit()
         self._ocr_api_key_input = self._secret_input()
+        self._use_local_ocr_input = QCheckBox("Use local RapidOCR for OCR")
+        self._online_ocr_model_name = ""
+        self._online_ocr_gateway = ""
+        self._online_ocr_api_key = ""
         self._translate_model_input = QLineEdit()
         self._translate_gateway_input = QLineEdit()
         self._translate_api_key_input = self._secret_input()
@@ -120,6 +129,9 @@ class SettingsDialog(QDialog):
         self._ocr_model_input.setText(settings.ocr_model_name)
         self._ocr_gateway_input.setText(settings.ocr_gateway)
         self._ocr_api_key_input.setText(settings.ocr_api_key)
+        self._remember_online_ocr_fields(settings)
+        self._use_local_ocr_input.setChecked(settings.use_local_ocr)
+        self._apply_local_ocr_state(settings.use_local_ocr, remember_current=False)
         self._translate_model_input.setText(settings.translate_model_name)
         self._translate_gateway_input.setText(settings.translate_gateway)
         self._translate_api_key_input.setText(settings.translate_api_key)
@@ -127,10 +139,19 @@ class SettingsDialog(QDialog):
         self._shortcut_input.setKeySequence(QKeySequence(settings.capture_shortcut))
 
     def settings(self) -> AppSettings:
+        ocr_model_name = self._ocr_model_input.text().strip()
+        ocr_api_key = self._ocr_api_key_input.text().strip()
+        ocr_gateway = self._ocr_gateway_input.text().strip()
+        if self._use_local_ocr_input.isChecked():
+            ocr_model_name = self._online_ocr_model_name
+            ocr_api_key = self._online_ocr_api_key
+            ocr_gateway = self._online_ocr_gateway
+
         return AppSettings(
-            ocr_model_name=self._ocr_model_input.text().strip(),
-            ocr_api_key=self._ocr_api_key_input.text().strip(),
-            ocr_gateway=self._ocr_gateway_input.text().strip(),
+            ocr_model_name=ocr_model_name,
+            ocr_api_key=ocr_api_key,
+            ocr_gateway=ocr_gateway,
+            use_local_ocr=self._use_local_ocr_input.isChecked(),
             translate_model_name=self._translate_model_input.text().strip(),
             translate_api_key=self._translate_api_key_input.text().strip(),
             translate_gateway=self._translate_gateway_input.text().strip(),
@@ -182,7 +203,7 @@ class SettingsDialog(QDialog):
             self._settings_group(
                 "OCR Model",
                 [
-                    ("Model name", self._ocr_model_input),
+                    ("Model name", self._ocr_model_row()),
                     ("Gateway URL", self._ocr_gateway_input),
                     ("API Key", self._secret_row(self._ocr_api_key_input)),
                 ],
@@ -252,6 +273,69 @@ class SettingsDialog(QDialog):
         layout.addWidget(hint)
 
         return row
+
+    def _ocr_model_row(self) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+
+        self._use_local_ocr_input.setToolTip(
+            "When enabled, OCR runs locally with RapidOCR; translation still uses the online translate model.",
+        )
+        self._use_local_ocr_input.toggled.connect(
+            lambda enabled: self._apply_local_ocr_state(enabled),
+        )
+        layout.addWidget(self._ocr_model_input)
+        layout.addWidget(self._use_local_ocr_input)
+
+        return row
+
+    def _remember_online_ocr_fields(self, settings: AppSettings | None = None) -> None:
+        if settings is not None:
+            self._online_ocr_model_name = settings.ocr_model_name
+            self._online_ocr_gateway = settings.ocr_gateway
+            self._online_ocr_api_key = settings.ocr_api_key
+            return
+
+        self._online_ocr_model_name = self._ocr_model_input.text().strip()
+        self._online_ocr_gateway = self._ocr_gateway_input.text().strip()
+        self._online_ocr_api_key = self._ocr_api_key_input.text().strip()
+
+    def _apply_local_ocr_state(
+        self,
+        enabled: bool,
+        remember_current: bool = True,
+    ) -> None:
+        if enabled:
+            if remember_current:
+                self._remember_online_ocr_fields()
+            self._ocr_model_input.setText("Local")
+            self._ocr_gateway_input.clear()
+            self._ocr_api_key_input.clear()
+        else:
+            self._restore_online_ocr_fields_from_saved_settings_if_empty()
+            self._ocr_model_input.setText(self._online_ocr_model_name)
+            self._ocr_gateway_input.setText(self._online_ocr_gateway)
+            self._ocr_api_key_input.setText(self._online_ocr_api_key)
+
+        for input_widget in (
+            self._ocr_model_input,
+            self._ocr_gateway_input,
+            self._ocr_api_key_input,
+        ):
+            input_widget.setEnabled(not enabled)
+
+    def _restore_online_ocr_fields_from_saved_settings_if_empty(self) -> None:
+        if (
+            self._online_ocr_model_name
+            or self._online_ocr_gateway
+            or self._online_ocr_api_key
+        ):
+            return
+
+        settings = load_settings()
+        self._remember_online_ocr_fields(settings)
 
     def _shortcut_row(self) -> QWidget:
         row = QWidget()
@@ -331,6 +415,14 @@ def _font_size_value(value: str) -> int:
         return DEFAULT_TRANSLATION_FONT_SIZE
 
     return min(max(parsed, 10), 32)
+
+
+def _bool_value(value: str) -> bool:
+    return value.strip().lower() in {"true", "1", "yes", "on"}
+
+
+def _bool_env_value(value: bool) -> str:
+    return "true" if value else "false"
 
 
 def _shortcut_value(value: str) -> str:
